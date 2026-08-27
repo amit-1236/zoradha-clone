@@ -1,0 +1,12 @@
+ #supportHero{
+    background-color:rgb(56, 126, 209);
+    color: white;
+ }
+ #supportWrapper{
+    display: flex;
+    justify-content: flex-start;
+    margin: 0  150px;
+ }
+ #supportContent{
+    text-align: left;
+ }
