@@ -1,10 +1,20 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const Summary = () => {
+  const [userName, setUserName] = useState("User");
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("zoradhaUser");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserName(user.username || "User");
+    }
+  }, []);
+
   return (
     <>
       <div className="username">
-        <h6>Hi, User!</h6>
+        <h6>Hi, {userName}!</h6>
         <hr className="divider" />
       </div>
 

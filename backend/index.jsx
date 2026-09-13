@@ -3,16 +3,25 @@ require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require('cors');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const session = require('express-session');
 
 const app = express();
 const mongoose = require("mongoose");
 const {HoldingsModel} = require("./model/HoldingsModel.jsx");
 const {PositionsModel} = require("./model/PositionsModel.jsx");
 const {OrderModel} = require("./model/OrderModel.jsx");
+const {userModel} = require("./model/UserModel.js");
 
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT ||3002;
 const URL =  process.env.MONGO_URL;
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET || 'secret',
+  resave: false,
+  saveUninitialized: false,
+};
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -26,7 +35,13 @@ async function main(){
     await mongoose.connect(URL);
 }
 
+app.use(session(sessionOptions));
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(userModel.authenticate()));
 
+passport.serializeUser(userModel.serializeUser());
+passport.deserializeUser(userModel.deserializeUser());
 
 
 //  app.get("/addHoldings", async(req, res) => {
@@ -197,6 +212,66 @@ async function main(){
 //   }
 //   res.send("all position are done");
 // });
+
+app.get("/demo", async (req, res) => {
+    let fakeUser = new userModel({
+    email: "yyadav@gmail.com",
+    username: "aamit",
+    });
+    let registerUser = await userModel.register(fakeUser, "amit@1236");
+    res.send(registerUser );
+})
+
+// login route
+app.post("/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+        if (err) {
+            return next(err);
+        }
+
+        if (!user) {
+            return res.status(401).json({ message: "Invalid username or password." });
+        }
+
+        req.logIn(user, (loginErr) => {
+            if (loginErr) {
+                return next(loginErr);
+            }
+
+            return res.status(200).json({
+                message: "Login successful.",
+                user: {
+                    username: user.username,
+                    email: user.email,
+                },
+            });
+        });
+    })(req, res, next);
+});
+
+// signup route
+
+app.post("/signup", async (req, res) => {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+        return res.status(400).json({ message: "Username, email and password are required." });
+    }
+
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email." });
+    }
+
+    try {
+        const newUser = new userModel({ username, email });
+        await userModel.register(newUser, password);
+        return res.status(201).json({ message: "Signup successful!" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || "Signup failed." });
+    }
+});
+
 
 app.get("/newOrder", async(req, res) => {
     let allOrder = await OrderModel.find({});

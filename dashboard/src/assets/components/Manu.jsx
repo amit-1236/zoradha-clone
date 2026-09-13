@@ -1,21 +1,39 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Menu = () => {
+  const navigate = useNavigate();
   const [selectedMenu, setSelectedMenu] = useState(0);
+  const [user, setUser] = useState(null);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("zoradhaUser");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const handleMenuClick = (index) => {
     setSelectedMenu(index);
   };
 
-  const handleProfileClick = (index) => {
+  const handleProfileClick = () => {
     setIsProfileDropdownOpen(!isProfileDropdownOpen);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("zoradhaUser");
+    setUser(null);
+    setIsProfileDropdownOpen(false);
+    navigate("/login");
   };
 
   const menuClass = "menu";
   const activeMenuClass = "menu selected";
+  const fullName = user?.username || "USER";
+  const initials = fullName.slice(0, 2).toUpperCase();
 
   return (
     <div className="menu-container">
@@ -69,7 +87,7 @@ const Menu = () => {
           <li>
             <Link
               style={{ textDecoration: "none" }}
-              to="funds"
+              to="/funds"
               onClick={() => handleMenuClick(4)}
             >
               <p className={selectedMenu === 4 ? activeMenuClass : menuClass}>
@@ -91,8 +109,25 @@ const Menu = () => {
         </ul>
         <hr />
         <div className="profile" onClick={handleProfileClick}>
-          <div className="avatar">ZU</div>
-          <p className="username">USERID</p>
+          <div className="avatar">{initials}</div>
+          <p className="username">{fullName.toUpperCase()}</p>
+          {isProfileDropdownOpen && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                marginLeft: "12px",
+                padding: "6px 10px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                background: "#fff",
+                color: "#374151",
+                cursor: "pointer",
+              }}
+            >
+              Logout
+            </button>
+          )}
         </div>
       </div>
     </div>
